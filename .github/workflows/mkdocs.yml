@@ -13,22 +13,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-          cache: 'pip' # Ускоряет пайплайн за счет кэширования зависимостей
-
-      - name: Install MkDocs and Material Theme
-        run: |
-          python -m pip install --upgrade pip
-          # Устанавливаем сам MkDocs и тему Material
-          pip install mkdocs-material
-
-      - name: Deploy to GitHub Pages
-        run: |
-          # Команда собирает статику и пушит её в ветку gh-pages
-          mkdocs gh-deploy --force
+          python-version: 3.x
+      - uses: actions/cache@v3
+        with:
+          key: ${{ github.ref }}
+          path: .cache
+      - run: pip install mkdocs-material
+      - run: pip install mkdocs-mermaid2-plugin
+      - run: pip install pillow cairosvg
+      - run: pip install beautifulsoup4>=4.11.1
+      - run: pip install mkdocs_puml
+      - run: pip install mkdocs-swagger-ui-tag      # Render Swagger
+      - run: mkdocs gh-deploy --force
+      - run: mkdocs gh-deploy --force
