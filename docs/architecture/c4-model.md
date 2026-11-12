@@ -1,0 +1,44 @@
+```mermaid
+flowchart TB
+  %% Определение стилей для архитектуры C4
+  classDef person fill:#08427b,stroke:#052e56,color:#fff,rx:5px,ry:5px
+  classDef container fill:#438dd5,stroke:#2a5e8f,color:#fff,rx:5px,ry:5px
+  classDef database fill:#1168bd,stroke:#0b4b8a,color:#fff,rx:5px,ry:5px
+  classDef external fill:#999999,stroke:#666666,color:#fff,rx:5px,ry:5px
+  classDef boundary fill:none,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
+
+  %% Внешние системы и пользователи
+  Dev["👤 Разработчик<br>OpenCode"]:::person
+  ROS2["🤖 ROS 2 Agent<br>Робособака"]:::external
+  ESP["🔌 ESP-IDF Tools<br>Прошивки ESP32"]:::external
+
+  subgraph SystemBoundary ["Локальная LLM-инфраструктура (Ubuntu VM: 192.168.1.44)"]
+    direction TB
+
+    WebUI["Open-WebUI<br>[Docker Контейнер]<br>Личный кабинет и чат-интерфейс"]:::container
+
+    LiteLLM["LiteLLM Gateway<br>[Docker Контейнер]<br>Очереди, квоты, маршрутизация (Port 4000)"]:::container
+
+    Redis[("Redis<br>[Docker Контейнер]<br>Состояние очередей (Queue)")]:::database
+    Postgres[("PostgreSQL<br>[Docker Контейнер]<br>API-ключи, бюджеты, логи")]:::database
+
+    Strata["Strata Engine<br>[Системный процесс]<br>Вывод Qwen 125B, KV-кэш (Port 8081)"]:::container
+    GPU[("Tesla P100 16GB<br>[Оборудование]<br>Удержание VRAM и экспертов")]:::database
+  end
+
+  %% Связи с безопасным синтаксисом
+  Dev -- "FIM-подсказки OpenAI API" --> LiteLLM
+  Dev -- "Браузер HTTPS" --> WebUI
+  ROS2 -- "REST API / Промпты" --> LiteLLM
+  ESP -- "REST API / Промпты" --> LiteLLM
+
+  WebUI -- "Проксирование чата" --> LiteLLM
+
+  LiteLLM <-- "SQL: Проверка баланса и ключей" --> Postgres
+  LiteLLM <-- "Redis: Буферизация при OOM-угрозе" --> Redis
+  LiteLLM -- "Изолированные запросы max_parallel: 1" --> Strata
+
+  Strata <-- "Выгрузка RAM-слоев / PCI-e" --> GPU
+
+  class SystemBoundary boundary
+```

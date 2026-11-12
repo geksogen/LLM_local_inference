@@ -57,7 +57,4 @@ nav:
   - Архитектура:
     - C4 и Компоненты: architecture/c4-model.md
     - Диаграмма развертывания: architecture/deployment.md
-    - ADR: architecture/ADR-001_Local_LLM_Architecture.md
-  - Инфраструктура:
-    - Docker Compose: infra/docker-compose.md
-    - Мониторинг (Grafana): infra/monitoring.md
+    - ADR: architecture/Architecture Decision Record (ADR).md
