@@ -117,7 +117,7 @@ services:
       - llm-net
     logging: *logging
 
-cadvisor:
+  cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     container_name: llm-cadvisor
     restart: unless-stopped
