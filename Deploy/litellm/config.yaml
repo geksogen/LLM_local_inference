@@ -20,6 +20,8 @@ litellm_settings:
   require_auth_for_metrics_endpoint: false
   callbacks:
     - "prometheus"
+  num_retries: 5
+  request_timeout: 600
 
 router_settings:
   redis_host: redis
