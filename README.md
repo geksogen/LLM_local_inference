@@ -34,8 +34,8 @@ flowchart TB
 
   %% Внешние системы и пользователи
   Dev["👤 Разработчик<br>OpenCode"]:::person
-  ROS2["🤖 ROS 2 Agent<br>Робособака"]:::external
-  ESP["🔌 ESP-IDF Tools<br>Прошивки ESP32"]:::external
+  ROS2["🤖 ROS 2 Agent"]:::external
+  ESP["🔌 ESP-IDF Tools"]:::external
 
   subgraph SystemBoundary ["Локальная LLM-инфраструктура (Ubuntu VM: 192.168.1.44)"]
     direction TB
