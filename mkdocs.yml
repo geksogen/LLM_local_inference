@@ -57,10 +57,7 @@ nav:
   - Архитектура:
     - C4 и Компоненты: architecture/c4-model.md
     - Диаграмма развертывания: architecture/deployment.md
-    - ADR-001 (LiteLLM + Strata): architecture/ADR-001_Local_LLM_Architecture.md
+    - ADR: architecture/ADR-001_Local_LLM_Architecture.md
   - Инфраструктура:
-    - Docker Compose стек: infra/docker-compose.md
+    - Docker Compose: infra/docker-compose.md
     - Мониторинг (Grafana): infra/monitoring.md
-  - Эксплуатация (Runbook):
-    - Настройка ROS 2 агента: runbook/ros2-agent.md
-    - Управление квотами VRAM: runbook/vram-management.md
