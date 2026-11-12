@@ -1,0 +1,129 @@
+version: '3.8'
+
+x-default-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  # --- 1. Базы данных и Кэш ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: llm-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: litellm_user
+      POSTGRES_PASSWORD: litellm_password_76*gteGd
+      POSTGRES_DB: litellmdb
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellmdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - llm-net
+    logging: *logging
+
+  redis:
+    image: redis:alpine
+    container_name: llm-redis
+    restart: always
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - llm-net
+    logging: *logging
+
+  # --- 2. Шлюз и Пользовательский интерфейс ---
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: llm-gateway
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://litellm:litellm_password@postgres:5432/litellmdb
+      - REDIS_URL=redis://redis:6379
+      - LITELLM_MASTER_KEY=sk-master-key-ros2
+      - PROMETHEUS_METRICS=True  # Включение эндпоинта метрик
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml
+    command: [ "--config", "/app/config.yaml", "--port", "4000", "--detailed_debug" ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Доступ к Strata Engine на порту 8081 хоста
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - llm-net
+    logging: *logging
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: llm-webui
+    restart: always
+    ports:
+      - "3000:8080"
+    environment:
+      - OPENAI_API_BASE_URL=http://litellm:4000/v1
+      - OPENAI_API_KEY=sk-master-key-ros2
+      - WEBUI_AUTH=True
+    volumes:
+      - webui_data:/app/backend/data
+    depends_on:
+      - litellm
+    networks:
+      - llm-net
+    logging: *logging
+
+  # --- 3. Мониторинг ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: llm-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Для сбора метрик с демона Docker на Ubuntu
+    networks:
+      - llm-net
+    logging: *logging
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: llm-grafana
+    restart: always
+    ports:
+      - "3001:3000" # WebUI занял 3000, Grafana будет на 3001
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin_strata_89*ddew
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - llm-net
+    logging: *logging
+
+networks:
+  llm-net:
+    driver: bridge
+
+volumes:
+  pg_data:
+  redis_data:
+  webui_data:
+  prom_data:
+  grafana_data:

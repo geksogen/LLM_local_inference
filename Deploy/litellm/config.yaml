@@ -1,0 +1,28 @@
+model_list:
+  - model_name: qwen3.8-flash-next-iq3_s
+    litellm_params:
+      # Указываем формат OpenAI, так как Strata Engine отдает совместимый API
+      model: openai/qwen3.8-flash-next-iq3_s
+      # host.docker.internal направляет трафик из контейнера на порт 8081 хоста Ubuntu
+      api_base: http://host.docker.internal:8081/v1
+      api_key: sk-strata-FfniAWTVn-cJRq1yIJ93bib3zOxNOOLR
+      # КРИТИЧНО: Защита VRAM. Только 1 одновременный запрос к видеокарте.
+      # Остальные запросы LiteLLM автоматически поставит в Redis-очередь.
+      max_parallel_requests: 1
+
+litellm_settings:
+  # Отбрасывать параметры от агентов, которые Strata не поддерживает
+  drop_params: true
+  # Включаем Redis для кэширования одинаковых промптов и работы очередей
+  cache: true
+  cache_type: redis
+
+router_settings:
+  redis_host: redis
+  redis_port: 6379
+
+general_settings:
+  # Мастер-ключ для доступа к админ-панели LiteLLM
+  master_key: sk-strata-FfniAWTVn-cJRq1yIJ93bib3zOxNOOLR
+  # Подключение к PostgreSQL для хранения ключей агентов и биллинга
+  database_url: postgresql://litellm:litellm_password@postgres:5432/litellmdb
