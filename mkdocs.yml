@@ -1,60 +1,55 @@
-# Файл: mkdocs.yml
-# Расположение: Корень репозитория
-site_name: Local LLM Infrastructure
-site_description: Документация по локальной LLM-инфраструктуре (Strata Engine + LiteLLM)
-site_author: Andrei
-repo_name: llm-infra
-# repo_url: https://github.com/ВАШ_АККАУНТ/llm-infra
-
+site_name: My test CI\CD for Documentations
 theme:
   name: material
   features:
     - navigation.tabs
     - navigation.sections
+    - toc.integrate
     - navigation.top
     - search.suggest
     - search.highlight
+    - content.tabs.link
+    - content.code.annotation
     - content.code.copy
+  language: en
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
+    - scheme: default
       toggle:
-        icon: material/brightness-7
-        name: Переключить на темную тему
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: custom
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+      primary: teal
+      accent: purple
+    - scheme: slate
       toggle:
-        icon: material/brightness-4
-        name: Переключить на светлую тему
+        icon: material/toggle-switch
+        name: Switch to light mode
+      primary: teal
+      accent: lime
 
-# Плагины
-plugins:
-  - search
-
-# №Поддержка Mermaid-диаграмм (UML, C4, Sequence), которые мы сделали для ADR
 markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
   - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
   - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
-      pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
 
-# Структура навигации портала
-nav:
-  - Главная: index.md
-  - Архитектура:
-    - C4 и Компоненты: architecture/c4-model.md
-    - Диаграмма развертывания: architecture/deployment.md
-    - ADR: architecture/Architecture Decision Record (ADR).md
+plugins:
+   - swagger-ui-tag
+   - mermaid2
+   - plantuml:
+      puml_url: https://www.plantuml.com/plantuml/
