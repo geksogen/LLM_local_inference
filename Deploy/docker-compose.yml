@@ -13,8 +13,8 @@ services:
     container_name: llm-postgres
     restart: always
     environment:
-      POSTGRES_USER: litellm_user
-      POSTGRES_PASSWORD: litellm_password_76*gteGd
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm_password
       POSTGRES_DB: litellmdb
     volumes:
       - pg_data:/var/lib/postgresql/data

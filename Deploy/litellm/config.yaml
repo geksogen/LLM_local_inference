@@ -16,6 +16,10 @@ litellm_settings:
   # Включаем Redis для кэширования одинаковых промптов и работы очередей
   cache: true
   cache_type: redis
+  # Disable autch to /metrics
+  require_auth_for_metrics_endpoint: false
+  callbacks:
+    - "prometheus"
 
 router_settings:
   redis_host: redis
