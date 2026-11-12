@@ -1,0 +1,66 @@
+# Файл: mkdocs.yml
+# Расположение: Корень репозитория
+site_name: Local LLM Infrastructure
+site_description: Документация по локальной LLM-инфраструктуре (Strata Engine + LiteLLM)
+site_author: Andrei
+repo_name: llm-infra
+# repo_url: https://github.com/ВАШ_АККАУНТ/llm-infra
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      toggle:
+        icon: material/brightness-7
+        name: Переключить на темную тему
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      toggle:
+        icon: material/brightness-4
+        name: Переключить на светлую тему
+
+# Плагины
+plugins:
+  - search
+
+# Поддержка Mermaid-диаграмм (UML, C4, Sequence), которые мы сделали для ADR
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+# Структура навигации портала
+nav:
+  - Главная: index.md
+  - Архитектура:
+    - C4 и Компоненты: architecture/c4-model.md
+    - Диаграмма развертывания: architecture/deployment.md
+    - ADR-001 (LiteLLM + Strata): architecture/ADR-001_Local_LLM_Architecture.md
+  - Инфраструктура:
+    - Docker Compose стек: infra/docker-compose.md
+    - Мониторинг (Grafana): infra/monitoring.md
+  - Эксплуатация (Runbook):
+    - Настройка ROS 2 агента: runbook/ros2-agent.md
+    - Управление квотами VRAM: runbook/vram-management.md

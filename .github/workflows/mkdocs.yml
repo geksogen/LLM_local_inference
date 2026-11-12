@@ -1,0 +1,43 @@
+# Файл: .github/workflows/mkdocs-pages.yml
+# Расположение: .github/workflows/
+name: Deploy MkDocs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    # Запускать пайплайн только если изменились файлы документации или настройки mkdocs
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/mkdocs-pages.yml'
+  # Позволяет запускать сборку вручную из интерфейса GitHub Actions
+  workflow_dispatch:
+
+# Права доступа для записи в ветку gh-pages
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # Ускоряет пайплайн за счет кэширования зависимостей
+
+      - name: Install MkDocs and Material Theme
+        run: |
+          python -m pip install --upgrade pip
+          # Устанавливаем сам MkDocs и тему Material
+          pip install mkdocs-material
+
+      - name: Deploy to GitHub Pages
+        run: |
+          # Команда собирает статику и пушит её в ветку gh-pages
+          mkdocs gh-deploy --force
