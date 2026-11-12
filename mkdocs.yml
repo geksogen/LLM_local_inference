@@ -33,7 +33,7 @@ theme:
 plugins:
   - search
 
-# Поддержка Mermaid-диаграмм (UML, C4, Sequence), которые мы сделали для ADR
+# №Поддержка Mermaid-диаграмм (UML, C4, Sequence), которые мы сделали для ADR
 markdown_extensions:
   - admonition
   - pymdownx.details
