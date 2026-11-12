@@ -5,16 +5,7 @@ name: Deploy MkDocs to GitHub Pages
 on:
   push:
     branches:
-      - main
-    # Запускать пайплайн только если изменились файлы документации или настройки mkdocs
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - '.github/workflows/mkdocs-pages.yml'
-  # Позволяет запускать сборку вручную из интерфейса GitHub Actions
-  workflow_dispatch:
-
-# Права доступа для записи в ветку gh-pages
+      - master
 permissions:
   contents: write
 
