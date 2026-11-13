@@ -1,0 +1,455 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<link href="architecture/Architecture%20Decision%20Record%20%28ADR%29/" rel="next"/>
+<link href="assets/images/favicon.png" rel="icon"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.8.1" name="generator"/>
+<title>My test CI\CD for Documentations</title>
+<link href="assets/stylesheets/main.57a0d79d.min.css" rel="stylesheet"/>
+<link href="assets/stylesheets/palette.fb2fffe2.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+<link href="assets/mkdocs_puml/puml.css" rel="stylesheet"/>
+<link href="assets/mkdocs_puml/interaction.css" rel="stylesheet"/>
+<script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+</head>
+<body data-md-color-accent="purple" data-md-color-primary="teal" data-md-color-scheme="default" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#local-llm-infrastructure-strata-litellm">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="My test CI\CD for Documentations" class="md-header__button md-logo" data-md-component="logo" href="." title="My test CI\CD for Documentations">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            My test CI\CD for Documentations
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              🧠 Local LLM Infrastructure (Strata + LiteLLM)
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="purple" data-md-color-media="" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_0" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"></path></svg>
+</label>
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="lime" data-md-color-media="" data-md-color-primary="teal" data-md-color-scheme="slate" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_0" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"></path></svg>
+</label>
+</form>
+<script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item md-tabs__item--active">
+<a class="md-tabs__link" href=".">
+        
+  
+  
+    
+  
+  🧠 Local LLM Infrastructure (Strata + LiteLLM)
+
+      </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="architecture/Architecture%20Decision%20Record%20%28ADR%29/">
+          
+  
+  
+  Architecture
+
+        </a>
+</li>
+</ul>
+</div>
+</nav>
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="My test CI\CD for Documentations" class="md-nav__button md-logo" data-md-component="logo" href="." title="My test CI\CD for Documentations">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+</a>
+    My test CI\CD for Documentations
+  </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+<span class="md-ellipsis">
+    
+  
+    🧠 Local LLM Infrastructure (Strata + LiteLLM)
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<a class="md-nav__link md-nav__link--active" href=".">
+<span class="md-ellipsis">
+    
+  
+    🧠 Local LLM Infrastructure (Strata + LiteLLM)
+  
+
+    
+  </span>
+</a>
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_1">
+<span class="md-ellipsis">
+      
+        🚀 Ключевые особенности и оптимизации
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#deployment">
+<span class="md-ellipsis">
+      
+        🏗 Архитектура (Deployment)
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_2">
+<span class="md-ellipsis">
+      
+        🛠 Системные требования
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_3">
+<span class="md-ellipsis">
+      
+        📦 Быстрый старт
+      
+    </span>
+</a>
+<nav aria-label="📦 Быстрый старт" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-strata-engine-native">
+<span class="md-ellipsis">
+      
+        Шаг 1: Запуск Strata Engine (Native)
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-docker">
+<span class="md-ellipsis">
+      
+        Шаг 2: Запуск шлюза и мониторинга (Docker)
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3">
+<span class="md-ellipsis">
+      
+        Шаг 3: Проверка работоспособности
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_4">
+<span class="md-ellipsis">
+      
+        📊 Мониторинг
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_5">
+<span class="md-ellipsis">
+      
+        📄 Лицензия
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="architecture/Architecture%20Decision%20Record%20%28ADR%29/">
+<span class="md-ellipsis">
+    
+  
+    ADR 001: Архитектура локальной LLM-инфраструктуры на базе Strata Engine и LiteLLM
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="architecture/Resource_Plan/">
+<span class="md-ellipsis">
+    
+  
+    Resource Plan
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="architecture/c4-model/">
+<span class="md-ellipsis">
+    
+  
+    C4 model
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="architecture/deployment/">
+<span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1 id="local-llm-infrastructure-strata-litellm">🧠 Local LLM Infrastructure (Strata + LiteLLM)</h1>
+<p><img alt="Status" src="https://img.shields.io/badge/Status-Production_Ready-success"/>
+<img alt="Hardware" src="https://img.shields.io/badge/GPU-NVIDIA_Tesla_P100_16GB-76b900"/>
+<img alt="Context" src="https://img.shields.io/badge/Context_Window-64K-blue"/></p>
+<p>Этот репозиторий содержит конфигурацию высоконагруженной локальной инфраструктуры для запуска больших языковых моделей (LLM). Инфраструктура специально спроектирована для работы с <strong>Qwen3.8-Flash-Next (125B параметров, MoE, IQ3_S)</strong> в условиях экстремальной нехватки VRAM (одна Tesla P100 16GB) с активным вытеснением весов в системную память (RAM Offload).</p>
+<p>Проект обеспечивает стабильное API для:
+1. Автономных агентов <strong>ROS 2</strong> (робособака) с длинными контекстами логов.
+2. IDE-плагинов <strong>OpenCode</strong> (FIM-автодополнение кода).
+3. Скриптов компиляции <strong>ESP-IDF</strong>.</p>
+<h2 id="_1">🚀 Ключевые особенности и оптимизации</h2>
+<ul>
+<li><strong>Extreme RAM Offload:</strong> Удержание 125B модели на 16GB VRAM (4,835 экспертов) и 65GB системной RAM. Скорость вывода: <strong>~28-30 tok/s</strong>.</li>
+<li><strong>Защита от OOM (Out of Memory):</strong> <ul>
+<li>Жесткое квотирование через <code>LiteLLM</code> (<code>max_parallel_requests: 1</code>).</li>
+<li>Буферизация конкурентных запросов через очередь <code>Redis</code> (предотвращает HTTP Timeout в IDE).</li>
+<li>Резервирование памяти ОС (<code>--conversation-cache-min-free-mib 6144</code>).</li>
+</ul>
+</li>
+<li><strong>Спекулятивное декодирование:</strong> Использование черновой модели (Draft Model Qwen 1.5B, <code>IQ1_M</code>), жестко привязанной к 4 потокам CPU (<code>--aux-cpus 4</code>), для валидации батчей на GPU.</li>
+<li><strong>64K Context Window + Context Shift:</strong> Продвинутое управление KV-кэшем (<code>--kv-resident 16384</code>) со скользящим окном, исключающее переполнение при отправке тяжелых графов ROS 2.</li>
+</ul>
+<h2 id="deployment">🏗 Архитектура (Deployment)</h2>
+<pre class="mermaid"><code>flowchart TB
+  %% Определение стилей для архитектуры C4
+  classDef person fill:#08427b,stroke:#052e56,color:#fff,rx:5px,ry:5px
+  classDef container fill:#438dd5,stroke:#2a5e8f,color:#fff,rx:5px,ry:5px
+  classDef database fill:#1168bd,stroke:#0b4b8a,color:#fff,rx:5px,ry:5px
+  classDef external fill:#999999,stroke:#666666,color:#fff,rx:5px,ry:5px
+  classDef boundary fill:none,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
+
+  %% Внешние системы и пользователи
+  Dev["👤 Разработчик&lt;br&gt;OpenCode"]:::person
+  ROS2["🤖 ROS 2 Agent"]:::external
+  ESP["🔌 ESP-IDF Tools"]:::external
+
+  subgraph SystemBoundary ["Локальная LLM-инфраструктура (Ubuntu VM: 192.168.1.44)"]
+    direction TB
+
+    WebUI["Open-WebUI&lt;br&gt;[Docker Контейнер]&lt;br&gt;Личный кабинет и чат-интерфейс"]:::container
+
+    LiteLLM["LiteLLM Gateway&lt;br&gt;[Docker Контейнер]&lt;br&gt;Очереди, квоты, маршрутизация (Port 4000)"]:::container
+
+    Redis[("Redis&lt;br&gt;[Docker Контейнер]&lt;br&gt;Состояние очередей (Queue)")]:::database
+    Postgres[("PostgreSQL&lt;br&gt;[Docker Контейнер]&lt;br&gt;API-ключи, бюджеты, логи")]:::database
+
+    Strata["Strata Engine&lt;br&gt;[Системный процесс]&lt;br&gt;Вывод Qwen 125B, KV-кэш (Port 8081)"]:::container
+    GPU[("Tesla P100 16GB&lt;br&gt;[Оборудование]&lt;br&gt;Удержание VRAM и экспертов")]:::database
+  end
+
+  %% Связи с безопасным синтаксисом
+  Dev -- "FIM-подсказки OpenAI API" --&gt; LiteLLM
+  Dev -- "Браузер HTTPS" --&gt; WebUI
+  ROS2 -- "REST API / Промпты" --&gt; LiteLLM
+  ESP -- "REST API / Промпты" --&gt; LiteLLM
+
+  WebUI -- "Проксирование чата" --&gt; LiteLLM
+
+  LiteLLM &lt;-- "SQL: Проверка баланса и ключей" --&gt; Postgres
+  LiteLLM &lt;-- "Redis: Буферизация при OOM-угрозе" --&gt; Redis
+  LiteLLM -- "Изолированные запросы max_parallel: 1" --&gt; Strata
+
+  Strata &lt;-- "Выгрузка RAM-слоев / PCI-e" --&gt; GPU
+
+  class SystemBoundary boundary</code></pre>
+<p><em>(Дополнительные архитектурные артефакты, включая C4 Diagram, Sequence Diagram и ADR, находятся в директории <code>docs/architecture/</code>)</em>.</p>
+<h2 id="_2">🛠 Системные требования</h2>
+<ul>
+<li><strong>ОС:</strong> Ubuntu 22.04 LTS / 24.04 LTS (Native или Proxmox VM).</li>
+<li><strong>RAM:</strong> Минимум 65 ГБ.</li>
+<li><strong>GPU:</strong> NVIDIA Tesla P100 16GB (или аналог с 16GB VRAM, драйвер CUDA 12+).</li>
+<li><strong>Диск:</strong> SSD/NVMe с минимум 50 ГБ свободного места (10 ГБ под Docker тома + модели).</li>
+<li><strong>ПО:</strong> Docker, Docker Compose, Strata Engine.</li>
+</ul>
+<h2 id="_3">📦 Быстрый старт</h2>
+<h3 id="1-strata-engine-native">Шаг 1: Запуск Strata Engine (Native)</h3>
+<p>Из-за специфики работы с PCI-e, RAM Offload и CPU-привязками для Draft-модели, Strata запускается вне Docker-контура.
+Убедитесь, что параметры запуска соответствуют нашему профилю тюнинга:
+*   Порт: <code>8081</code>
+*   Limit Context: <code>65536</code>
+*   KV-resident: <code>16384</code>
+*   Context Shift: <code>on</code>
+*   STRATA_DEFAULTS: <code>off</code>
+*   Draft: <code>path/to/qwen1.5b.gguf -ngl 0</code></p>
+<h3 id="2-docker">Шаг 2: Запуск шлюза и мониторинга (Docker)</h3>
+<p>Вся инфраструктура очередей, UI и сбора метрик поднимается одной командой:
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="c1"># Клонирование репозитория</span>
+<a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/your-username/llm-infra.git
+<a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="nb">cd</span><span class="w"> </span>llm-infra
+<a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>
+<a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="c1"># Запуск стека в фоновом режиме</span>
+<a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a>sudo<span class="w"> </span>docker-compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div></p>
+<h3 id="3">Шаг 3: Проверка работоспособности</h3>
+<ol>
+<li><strong>LiteLLM Gateway:</strong> <code>http://&lt;YOUR_IP&gt;:4000</code></li>
+<li><strong>Open-WebUI:</strong> <code>http://&lt;YOUR_IP&gt;:3000</code></li>
+<li><strong>Grafana Dashboards:</strong> <code>http://&lt;YOUR_IP&gt;:3001</code> (Логин/Пароль: admin / admin_ros2)</li>
+</ol>
+<p>Для проверки проксирования отправьте тестовый запрос:
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>curl<span class="w"> </span>--location<span class="w"> </span><span class="s1">'http://localhost:4000/v1/chat/completions'</span><span class="w"> </span><span class="se">\</span>
+<a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a>--header<span class="w"> </span><span class="s1">'Authorization: Bearer sk-master-key-ros2'</span><span class="w"> </span><span class="se">\</span>
+<a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a>--header<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a>--data<span class="w"> </span><span class="s1">'{</span>
+<a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="s1">    "model": "qwen3.8-flash-next-iq3_s",</span>
+<a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="s1">    "messages": [{"role": "user", "content": "Ping"}]</span>
+<a href="#__codelineno-1-7" id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="s1">}'</span>
+</code></pre></div></p>
+<h2 id="_4">📊 Мониторинг</h2>
+<p>Метрики собираются автоматически через <code>Prometheus</code>. Дашборды <code>Grafana</code> преднастроены через Provisioning. Вы можете отслеживать:
+* Потребление RAM/VRAM и утилизацию PCIe.
+* Количество токенов в секунду (Tok/s) и задержку до первого токена (TTFT).
+* Балансы виртуальных кошельков агентов (ROS 2 / OpenCode).</p>
+<h2 id="_5">📄 Лицензия</h2>
+<p>Этот проект распространяется под лицензией MIT. Подробности см. в файле <code>LICENSE</code>.</p>
+</article>
+</div>
+<script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+</div>
+<button class="md-top md-icon" data-md-component="top" hidden="" type="button">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+</main>
+<footer class="md-footer">
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "navigation.top", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotation", "content.code.copy"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+<script src="assets/javascripts/bundle.a5f9d56c.min.js"></script>
+<script src="assets/mkdocs_puml/puml.js"></script>
+<script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+<script src="assets/mkdocs_puml/interaction.js"></script>
+</body>
+</html>
