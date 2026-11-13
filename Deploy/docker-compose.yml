@@ -64,24 +64,6 @@ services:
       - llm-net
     logging: *logging
 
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: llm-webui
-    restart: always
-    ports:
-      - "3000:8080"
-    environment:
-      - OPENAI_API_BASE_URL=http://litellm:4000/v1
-      - OPENAI_API_KEY=sk-master-key-ros2
-      - WEBUI_AUTH=True
-    volumes:
-      - webui_data:/app/backend/data
-    depends_on:
-      - litellm
-    networks:
-      - llm-net
-    logging: *logging
-
   # --- 3. Мониторинг ---
   prometheus:
     image: prom/prometheus:latest
@@ -124,6 +106,5 @@ networks:
 volumes:
   pg_data:
   redis_data:
-  webui_data:
   prom_data:
   grafana_data:
