@@ -64,6 +64,31 @@ services:
       - llm-net
     logging: *logging
 
+  # --- 2.2. Селф-сервис портал пользователей ---
+  portal:
+    build: ./portal
+    container_name: llm-portal
+    restart: always
+    ports:
+      - "3002:8000" # WebUI портала (3000 занят, 3001 — Grafana)
+    environment:
+      - LITELLM_URL=http://litellm:4000
+      - MASTER_KEY=sk-strata-FfniAWTVn-cJRq1yIJ93bib3zOxNOOLR # = general_settings.master_key из config.yaml
+      - STRATA_URL=http://host.docker.internal:8081 # Strata Engine на хосте (порт 8081)
+      - LOCAL_IP=192.168.1.44 # LAN-адрес хоста для генерируемых opencode.json клиентов
+      - MODEL_NAME=qwen3.8-flash-next-iq3_s
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      litellm:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - llm-net
+    logging: *logging
+
   # --- 3. Мониторинг ---
   prometheus:
     image: prom/prometheus:latest
