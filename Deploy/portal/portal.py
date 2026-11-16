@@ -311,7 +311,7 @@ HTML_TEMPLATE = """
             <span class="status-value" id="engine-state">-</span>
         </div>
         <div class="status-item">
-            <span class="status-label">В очереди</span>
+            <span class="status-label">Активных запросов</span>
             <span class="status-value" id="engine-queue" style="color: #60a5fa;">0</span>
         </div>
     </div>
@@ -601,9 +601,8 @@ async def collect_engine_metrics(client):
     except Exception:
         pass
 
-    # Позиция в очереди LiteLLM (queue_request): ожидающие запросы до Strata не доходят,
-    # но держат HTTP-обработчик шлюза — считаем их как in_flight шлюза минус актив движка
-    # и минус сам запрос к /health/backlog (он тоже числится in-flight).
+    # Все активные запросы шлюза LiteLLM (обрабатываемый + ожидающие в queue_request).
+    # Сам запрос к /health/backlog тоже числится in-flight — минусуем baseline 1.
     try:
         backlog = await client.get(
             f"{LITELLM_URL}/health/backlog",
@@ -612,8 +611,7 @@ async def collect_engine_metrics(client):
         )
         if backlog.status_code == 200:
             in_flight = int(backlog.json().get("in_flight_requests", 0))
-            waiting = max(0, in_flight - engine_active - 1)
-            result["queue_length"] = max(live_queued, waiting)
+            result["queue_length"] = max(0, in_flight - 1)
     except Exception:
         pass
     return result
@@ -714,7 +712,7 @@ async def check_stats(api_key: str = Form(...)):
                 queue_status_html = '<span style="color: #f87171; font-weight: bold;">🔴 Движок недоступен.</span>'
             elif active_reqs > 0:
                 if queue_len > 0:
-                    queue_status_html = f'<span style="color: #facc15; font-weight: bold;">⏳ Модель: {engine_state} ({active_reqs} в работе, {queue_len} в очереди).</span>'
+                    queue_status_html = f'<span style="color: #facc15; font-weight: bold;">⏳ Модель: {engine_state} (активных запросов: {queue_len}).</span>'
                 else:
                     queue_status_html = f'<span style="color: #4ade80; font-weight: bold;">⚡ Модель: {engine_state}.</span>'
             else:
