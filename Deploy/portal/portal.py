@@ -602,7 +602,8 @@ async def collect_engine_metrics(client):
         pass
 
     # Позиция в очереди LiteLLM (queue_request): ожидающие запросы до Strata не доходят,
-    # но держат HTTP-обработчик шлюза — считаем их как in_flight шлюза минус актив движка.
+    # но держат HTTP-обработчик шлюза — считаем их как in_flight шлюза минус актив движка
+    # и минус сам запрос к /health/backlog (он тоже числится in-flight).
     try:
         backlog = await client.get(
             f"{LITELLM_URL}/health/backlog",
@@ -611,7 +612,7 @@ async def collect_engine_metrics(client):
         )
         if backlog.status_code == 200:
             in_flight = int(backlog.json().get("in_flight_requests", 0))
-            waiting = max(0, in_flight - engine_active)
+            waiting = max(0, in_flight - engine_active - 1)
             result["queue_length"] = max(live_queued, waiting)
     except Exception:
         pass
