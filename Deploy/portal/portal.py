@@ -621,7 +621,7 @@ async def collect_engine_metrics(client):
 
 @app.get("/api/status")
 async def get_engine_status():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         m = await collect_engine_metrics(client)
     return {
         "is_online": m["is_online"],
@@ -632,9 +632,21 @@ async def get_engine_status():
     }
 
 
+@app.get("/api/debug/metrics")
+async def debug_metrics():
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        try:
+            r = await client.get(f"{LITELLM_URL}/metrics", timeout=3)
+            lines = [l for l in r.text.splitlines()
+                     if any(k in l.lower() for k in ("in_progress", "in_flight", "queue"))]
+            return {"status_code": r.status_code, "matched_lines": lines[:50]}
+        except Exception as e:
+            return {"error": str(e)}
+
+
 @app.post("/generate")
 async def generate_key(username: str = Form(...)):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
             response = await client.post(
                 f"{LITELLM_URL}/key/generate",
@@ -663,7 +675,7 @@ async def generate_key(username: str = Form(...)):
 
 @app.post("/stats", response_class=HTMLResponse)
 async def check_stats(api_key: str = Form(...)):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
             response = await client.get(
                 f"{LITELLM_URL}/key/info",
