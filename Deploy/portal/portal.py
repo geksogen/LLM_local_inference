@@ -580,6 +580,8 @@ async def admin_logout():
 async def collect_engine_metrics(client):
     result = {"is_online": False, "state": "offline", "active_requests": 0,
               "queue_length": 0, "phase": None, "source": "none"}
+    engine_active = 0
+    live_queued = 0
 
     try:
         metrics_resp = await client.get(
@@ -592,27 +594,65 @@ async def collect_engine_metrics(client):
             result["source"] = "strata/metrics"
             live = metrics_resp.json().get("live", {})
             live_state = str(live.get("state", "idle")).lower()
-            result["queue_length"] = int(live.get("queued") or 0)
+            live_queued = int(live.get("queued") or 0)
             result["phase"] = live.get("phase")
-            if live_state == "idle" and result["queue_length"] > 0:
-                result["state"] = "queued"
-            elif live_state == "idle":
-                result["state"] = "idle"
-            else:
-                result["state"] = "processing"
-                result["active_requests"] = 1
-            return result
+            if live_state != "idle":
+                engine_active = 1
     except Exception:
         pass
 
+    # Запросы, сидящие в очереди LiteLLM (queue_request), до Strata не доходят —
+    # считаем их как in_flight шлюза минус активные у движка.
+    proxy_inflight = None
     try:
-        response = await client.get(f"{STRATA_URL}/health", timeout=1.5)
-        if response.status_code == 200:
-            result["is_online"] = True
-            result["source"] = "strata/health"
-            result["state"] = "idle"
+        backlog = await client.get(
+            f"{LITELLM_URL}/health/backlog",
+            headers={"Authorization": f"Bearer {MASTER_KEY}"},
+            timeout=2.0,
+        )
+        if backlog.status_code == 200:
+            proxy_inflight = int(backlog.json().get("in_flight_requests", 0))
     except Exception:
         pass
+
+    if proxy_inflight is None:
+        try:
+            llm_metrics = await client.get(f"{LITELLM_URL}/metrics", timeout=2.0)
+            if llm_metrics.status_code == 200:
+                total = 0
+                for line in llm_metrics.text.splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    parts = line.split()
+                    try:
+                        value = int(float(parts[-1]))
+                    except (ValueError, IndexError):
+                        continue
+                    name = parts[0].split("{")[0].lower()
+                    if "in_flight" in name or "in_progress" in name:
+                        total += value
+                proxy_inflight = total
+        except Exception:
+            pass
+
+    waiting = 0
+    if proxy_inflight is not None:
+        waiting = max(0, proxy_inflight - engine_active - live_queued)
+        if proxy_inflight > 0 and not result["is_online"]:
+            result["is_online"] = True
+    result["queue_length"] = live_queued + waiting
+
+    if result["source"] == "strata/metrics":
+        if engine_active:
+            result["state"] = "processing"
+            result["active_requests"] = 1
+        elif result["queue_length"] > 0:
+            result["state"] = "queued"
+        else:
+            result["state"] = "idle"
+    elif result["is_online"]:
+        result["state"] = "processing" if engine_active or waiting else "idle"
     return result
 
 
