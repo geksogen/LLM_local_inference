@@ -329,9 +329,8 @@ HTML_TEMPLATE = """
                 </form>
             </div>
             <div class="hint-box">
-                <strong>Путь установки конфига:</strong><br>
-                💻 <strong>Win:</strong> <code>%APPDATA%\\OpenCode\\config</code><br>
-                🍏 <strong>Mac:</strong> <code>~/.config/opencode/</code>
+                <strong>⚙️ Настройка OpenCode:</strong><br>
+                Для настройки разместите файл <code>opencode.json</code> в директорию проекта — OpenCode автоматически определит модель и адрес шлюза.
             </div>
         </div>
 
@@ -412,6 +411,8 @@ HTML_TEMPLATE = """
                         stateEl.innerHTML = '<span class="badge-green">Ожидает</span>';
                     } else if (data.state === 'processing') {
                         stateEl.innerHTML = '<span class="badge-yellow">⚡ Занят</span>';
+                    } else if (data.state === 'queued') {
+                        stateEl.innerHTML = '<span class="badge-yellow">⏳ В очереди</span>';
                     } else {
                         stateEl.innerHTML = `<span class="badge-yellow">${data.state}</span>`;
                     }
@@ -575,31 +576,60 @@ async def admin_logout():
     return response
 
 
+async def collect_engine_metrics(client):
+    result = {"is_online": False, "state": "offline", "active_requests": 0, "queue_length": 0}
+
+    try:
+        response = await client.get(f"{STRATA_URL}/health", timeout=1.5)
+        if response.status_code == 200:
+            result["is_online"] = True
+            raw = response.json().get("status", "idle").lower()
+            result["strata_busy"] = raw in ["processing", "busy", "generating"]
+    except Exception:
+        pass
+
+    try:
+        metrics_resp = await client.get(f"{LITELLM_URL}/metrics", timeout=1.5)
+        if metrics_resp.status_code == 200:
+            for line in metrics_resp.text.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split()
+                try:
+                    value = int(float(parts[-1]))
+                except (ValueError, IndexError):
+                    continue
+                name = parts[0].split("{")[0].lower()
+                if "queue" in name:
+                    result["queue_length"] += value
+                elif "in_progress" in name or "in_flight" in name:
+                    result["active_requests"] += value
+    except Exception:
+        pass
+
+    if not result["is_online"]:
+        result["state"] = "offline"
+    elif result.get("strata_busy") or result["active_requests"] > 0:
+        result["state"] = "processing"
+    elif result["queue_length"] > 0:
+        result["state"] = "queued"
+    else:
+        result["state"] = "idle"
+    return result
+
+
 @app.get("/api/status")
 async def get_engine_status():
-    status_data = {"is_online": False, "model": MODEL_NAME, "state": "unknown", "queue_length": 0}
     async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{STRATA_URL}/health", timeout=1.5)
-            if response.status_code == 200:
-                status_data["is_online"] = True
-                raw_status = response.json().get("status", "idle").lower()
-                status_data["state"] = "idle" if raw_status in ["ok", "idle"] else "processing" if raw_status in [
-                    "processing", "busy", "generating"] else raw_status
-        except Exception:
-            pass
-
-        try:
-            metrics_resp = await client.get(f"{LITELLM_URL}/metrics", timeout=1.5)
-            if metrics_resp.status_code == 200:
-                for line in metrics_resp.text.split('\n'):
-                    if not line.startswith("#") and ("queue_length" in line or "requests_in_queue" in line):
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            status_data["queue_length"] += int(float(parts[-1]))
-        except Exception:
-            pass
-    return status_data
+        m = await collect_engine_metrics(client)
+    return {
+        "is_online": m["is_online"],
+        "model": MODEL_NAME,
+        "state": m["state"],
+        "queue_length": m["queue_length"],
+        "active_requests": m["active_requests"],
+    }
 
 
 @app.post("/generate")
@@ -652,30 +682,18 @@ async def check_stats(api_key: str = Form(...)):
             key_alias = info.get("key_alias") or "Пользователь"
             models = ", ".join(info.get("models", [])) or "Все доступные"
 
-            engine_state = "idle"
-            queue_len = 0
-            try:
-                health_resp = await client.get(f"{STRATA_URL}/health", timeout=1.0)
-                if health_resp.status_code == 200:
-                    raw_st = health_resp.json().get("status", "idle").lower()
-                    if raw_st in ["processing", "busy", "generating"]:
-                        engine_state = "processing"
+            m = await collect_engine_metrics(client)
+            engine_state = m["state"]
+            queue_len = m["queue_length"]
+            active_reqs = m["active_requests"]
 
-                metrics_resp = await client.get(f"{LITELLM_URL}/metrics", timeout=1.0)
-                if metrics_resp.status_code == 200:
-                    for line in metrics_resp.text.split('\n'):
-                        if not line.startswith("#") and ("queue_length" in line or "requests_in_queue" in line):
-                            parts = line.split()
-                            if len(parts) >= 2:
-                                queue_len += int(float(parts[-1]))
-            except Exception:
-                pass
-
-            if engine_state == "processing":
+            if active_reqs > 0 or engine_state == "processing":
                 if queue_len > 0:
-                    queue_status_html = '<span style="color: #facc15; font-weight: bold;">⏳ Модель занята. Ваш запрос в очереди.</span>'
+                    queue_status_html = f'<span style="color: #facc15; font-weight: bold;">⏳ Модель занята ({active_reqs} в работе, {queue_len} в очереди).</span>'
                 else:
-                    queue_status_html = '<span style="color: #4ade80; font-weight: bold;">⚡ Модель обрабатывает запрос.</span>'
+                    queue_status_html = '<span style="color: #4ade80; font-weight: bold;">⚡ Модель обрабатывает ваш запрос.</span>'
+            elif engine_state == "offline":
+                queue_status_html = '<span style="color: #f87171; font-weight: bold;">🔴 Движок недоступен.</span>'
             else:
                 queue_status_html = '<span style="color: #10b981; font-weight: bold;">🟢 Движок свободен. Запросы выполняются мгновенно.</span>'
 

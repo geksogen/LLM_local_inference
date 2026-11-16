@@ -26,6 +26,8 @@ litellm_settings:
 router_settings:
   redis_host: redis
   redis_port: 6379
+  # Реальная очередь в Redis при достижении max_parallel_requests (иначе 429)
+  queue_request: true
 
 general_settings:
   # Мастер-ключ для доступа к админ-панели LiteLLM
