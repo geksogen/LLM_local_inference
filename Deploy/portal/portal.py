@@ -578,6 +578,8 @@ async def admin_logout():
 async def collect_engine_metrics(client):
     result = {"is_online": False, "state": "offline", "active_requests": 0,
               "queue_length": 0, "phase": None, "source": "none"}
+    engine_active = 0
+    live_queued = 0
 
     try:
         metrics_resp = await client.get(
@@ -591,9 +593,26 @@ async def collect_engine_metrics(client):
             live = metrics_resp.json().get("live", {})
             live_state = str(live.get("state", "idle")).lower()
             result["state"] = live_state
-            result["queue_length"] = int(live.get("queued") or 0)
+            live_queued = int(live.get("queued") or 0)
+            result["queue_length"] = live_queued
             result["phase"] = live.get("phase")
-            result["active_requests"] = 0 if live_state == "idle" else 1
+            engine_active = 0 if live_state == "idle" else 1
+            result["active_requests"] = engine_active
+    except Exception:
+        pass
+
+    # Позиция в очереди LiteLLM (queue_request): ожидающие запросы до Strata не доходят,
+    # но держат HTTP-обработчик шлюза — считаем их как in_flight шлюза минус актив движка.
+    try:
+        backlog = await client.get(
+            f"{LITELLM_URL}/health/backlog",
+            headers={"Authorization": f"Bearer {MASTER_KEY}"},
+            timeout=2.0,
+        )
+        if backlog.status_code == 200:
+            in_flight = int(backlog.json().get("in_flight_requests", 0))
+            waiting = max(0, in_flight - engine_active)
+            result["queue_length"] = max(live_queued, waiting)
     except Exception:
         pass
     return result
@@ -623,7 +642,13 @@ async def debug_metrics():
                 timeout=3,
             )
             data = r.json() if r.status_code == 200 else {}
+            backlog = await client.get(
+                f"{LITELLM_URL}/health/backlog",
+                headers={"Authorization": f"Bearer {MASTER_KEY}"},
+                timeout=3,
+            )
             return {"status_code": r.status_code, "live": data.get("live"),
+                    "backlog": backlog.json() if backlog.status_code == 200 else backlog.status_code,
                     "hardware": (data.get("hardware") or {})}
         except Exception as e:
             return {"error": str(e)}
