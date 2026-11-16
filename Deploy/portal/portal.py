@@ -410,7 +410,8 @@ HTML_TEMPLATE = """
                     if (data.state === 'idle') {
                         stateEl.innerHTML = '<span class="badge-green">Ожидает</span>';
                     } else if (data.state === 'processing') {
-                        stateEl.innerHTML = '<span class="badge-yellow">⚡ Занят</span>';
+                        const phase = data.phase ? ` — ${data.phase}` : '';
+                        stateEl.innerHTML = `<span class="badge-yellow">⚡ Занят${phase}</span>`;
                     } else if (data.state === 'queued') {
                         stateEl.innerHTML = '<span class="badge-yellow">⏳ В очереди</span>';
                     } else {
@@ -577,45 +578,41 @@ async def admin_logout():
 
 
 async def collect_engine_metrics(client):
-    result = {"is_online": False, "state": "offline", "active_requests": 0, "queue_length": 0}
+    result = {"is_online": False, "state": "offline", "active_requests": 0,
+              "queue_length": 0, "phase": None, "source": "none"}
+
+    try:
+        metrics_resp = await client.get(
+            f"{STRATA_URL}/metrics",
+            headers={"Authorization": f"Bearer {MASTER_KEY}"},
+            timeout=2.0,
+        )
+        if metrics_resp.status_code == 200:
+            result["is_online"] = True
+            result["source"] = "strata/metrics"
+            live = metrics_resp.json().get("live", {})
+            live_state = str(live.get("state", "idle")).lower()
+            result["queue_length"] = int(live.get("queued") or 0)
+            result["phase"] = live.get("phase")
+            if live_state == "idle" and result["queue_length"] > 0:
+                result["state"] = "queued"
+            elif live_state == "idle":
+                result["state"] = "idle"
+            else:
+                result["state"] = "processing"
+                result["active_requests"] = 1
+            return result
+    except Exception:
+        pass
 
     try:
         response = await client.get(f"{STRATA_URL}/health", timeout=1.5)
         if response.status_code == 200:
             result["is_online"] = True
-            raw = response.json().get("status", "idle").lower()
-            result["strata_busy"] = raw in ["processing", "busy", "generating"]
+            result["source"] = "strata/health"
+            result["state"] = "idle"
     except Exception:
         pass
-
-    try:
-        metrics_resp = await client.get(f"{LITELLM_URL}/metrics", timeout=1.5)
-        if metrics_resp.status_code == 200:
-            for line in metrics_resp.text.splitlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                parts = line.split()
-                try:
-                    value = int(float(parts[-1]))
-                except (ValueError, IndexError):
-                    continue
-                name = parts[0].split("{")[0].lower()
-                if "queue" in name:
-                    result["queue_length"] += value
-                elif "in_progress" in name or "in_flight" in name:
-                    result["active_requests"] += value
-    except Exception:
-        pass
-
-    if not result["is_online"]:
-        result["state"] = "offline"
-    elif result.get("strata_busy") or result["active_requests"] > 0:
-        result["state"] = "processing"
-    elif result["queue_length"] > 0:
-        result["state"] = "queued"
-    else:
-        result["state"] = "idle"
     return result
 
 
@@ -629,6 +626,7 @@ async def get_engine_status():
         "state": m["state"],
         "queue_length": m["queue_length"],
         "active_requests": m["active_requests"],
+        "phase": m["phase"],
     }
 
 
@@ -636,10 +634,14 @@ async def get_engine_status():
 async def debug_metrics():
     async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
-            r = await client.get(f"{LITELLM_URL}/metrics", timeout=3)
-            lines = [l for l in r.text.splitlines()
-                     if any(k in l.lower() for k in ("in_progress", "in_flight", "queue"))]
-            return {"status_code": r.status_code, "matched_lines": lines[:50]}
+            r = await client.get(
+                f"{STRATA_URL}/metrics",
+                headers={"Authorization": f"Bearer {MASTER_KEY}"},
+                timeout=3,
+            )
+            data = r.json() if r.status_code == 200 else {}
+            return {"status_code": r.status_code, "live": data.get("live"),
+                    "hardware": (data.get("hardware") or {})}
         except Exception as e:
             return {"error": str(e)}
 
