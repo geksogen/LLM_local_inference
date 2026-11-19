@@ -1,0 +1,58 @@
+flowchart TB
+  classDef device fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000
+  classDef environment fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000
+  classDef container fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000
+  classDef hardware fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+
+  subgraph External ["&laquo;environment&raquo;<br>Локальная сеть"]
+    direction TB
+    WS["&laquo;device&raquo;<br>Рабочая станция Windows 10<br>(OpenCode IDE)"]:::device
+    Robot["&laquo;device&raquo;<br>Raspberry Pi<br>(ROS 2 Робособака)"]:::device
+    ESP["&laquo;device&raquo;<br>Аппаратная плата<br>(ESP32 / ESP-IDF)"]:::device
+  end
+
+  subgraph Proxmox ["&laquo;device&raquo;<br>Proxmox 8.1 Hypervisor"]
+    direction TB
+
+    subgraph Ubuntu ["&laquo;execution environment&raquo;<br>Ubuntu VM (192.168.1.44)"]
+      direction TB
+
+      subgraph Docker ["&laquo;execution environment&raquo;<br>Docker Engine"]
+        direction TB
+        WebUI["&laquo;container&raquo;<br>open-webui<br>Port: 3000"]:::container
+        LiteLLM["&laquo;container&raquo;<br>litellm-proxy<br>Port: 4000"]:::container
+        Redis["&laquo;container&raquo;<br>redis:alpine<br>Port: 6379"]:::container
+        DB["&laquo;container&raquo;<br>postgres:15-alpine<br>Port: 5432 (Vol: ./pgdata)"]:::container
+      end
+
+      subgraph OS ["&laquo;execution environment&raquo;<br>Native OS / Host Network"]
+        Strata["&laquo;executable&raquo;<br>strata-engine<br>Port: 8081"]:::environment
+      end
+
+      subgraph Hardware ["&laquo;hardware&raquo;<br>Проброшенные ресурсы (Passthrough)"]
+        direction LR
+        GPU["&laquo;device&raquo;<br>NVIDIA Tesla P100 16GB<br>(PCIe: /dev/nvidia0)"]:::hardware
+        CPU["&laquo;device&raquo;<br>vCPU 10 Cores<br>(x86_64)"]:::hardware
+        RAM["&laquo;device&raquo;<br>System RAM 65GB"]:::hardware
+      end
+    end
+  end
+
+  %% Сетевые взаимодействия
+  WS -- "HTTP:4000 (REST API)" --> LiteLLM
+  Robot -- "HTTP:4000 (JSON/REST)" --> LiteLLM
+  ESP -- "HTTP:4000 (JSON/REST)" --> LiteLLM
+  WS -- "HTTP:3000 (Web UI)" --> WebUI
+
+  %% Внутренняя маршрутизация Docker
+  WebUI -- "HTTP (API Calls)" --> LiteLLM
+  LiteLLM -- "TCP:6379 (Кэш и очереди)" --> Redis
+  LiteLLM -- "TCP:5432 (Биллинг/Ключи)" --> DB
+
+  %% Связь Docker с хостовой машиной
+  LiteLLM -- "HTTP:8081 (Промпты)" --> Strata
+
+  %% Аппаратное взаимодействие (Native)
+  Strata -- "CUDA (Веса модели IQ3_S + KV int8)" --> GPU
+  Strata -- "Native Threads (Draft Model IQ1_M)" --> CPU
+  Strata -- "Memory Paging (RAM Offload)" --> RAM

@@ -1,0 +1,74 @@
+sequenceDiagram
+    autonumber
+
+    %% Участники процесса
+    actor Dev as Разработчик (OpenCode)
+    actor Agent as Агент (ROS 2)
+
+    box rgba(67, 141, 213, 0.1) "Шлюз и Квоты"
+        participant API as LiteLLM (Port 4000)
+        participant PG as Postgres (Квоты)
+        participant Redis as Redis (Очередь/Кэш)
+    end
+
+    box rgba(17, 104, 189, 0.1) "Исполнительный контур"
+        participant Strata as Strata Engine (Port 8081)
+        participant CPU as CPU (Draft Model)
+        participant GPU as GPU (Qwen 125B)
+    end
+
+    %% Сценарий 1: Успешный запрос от IDE
+    rect rgba(0, 255, 0, 0.05)
+        Note over Dev, GPU: Сценарий 1: Мгновенное автодополнение (Спекулятивное декодирование)
+        Dev->>API: POST /chat/completions (sk-opencode)
+        API->>PG: Проверка бюджета и токенов
+        PG-->>API: Бюджет OK
+
+        API->>Redis: Проверка семантического кэша (Cache Hit?)
+        Redis-->>API: Miss
+
+        API->>Strata: Проксирование промпта (max_parallel=1)
+        Strata->>GPU: Загрузка контекста (KV int8)
+
+        %% Спекуляция
+        loop Speculative Decoding (--spec 5)
+            Strata->>CPU: Сгенерируй 5 черновых токенов (IQ1_M)
+            CPU-->>Strata: Токены предсказаны
+            Strata->>GPU: Валидация 5 токенов одним батчем (IQ3_S)
+            GPU-->>Strata: Успех (Hit Rate 70%)
+        end
+
+        Strata-->>API: Возврат сгенерированного кода
+        API->>Redis: Сохранение ответа в кэш
+        API->>PG: Списание токенов с баланса
+        API-->>Dev: Код в редакторе (30 tok/s)
+    end
+
+    %% Сценарий 2: Агент занимает GPU, шлюз защищает от OOM
+    rect rgba(255, 0, 0, 0.05)
+        Note over Agent, GPU: Сценарий 2: Защита VRAM через очередь (Угроза OOM)
+        Agent->>API: POST /chat/completions (Промпт 45K токенов)
+        API->>Strata: Старт генерации для ROS 2
+
+        Note over Strata, GPU: Strata Engine занят (100% Load)
+
+        Dev->>API: POST /chat/completions (FIM запрос)
+        API->>Strata: Попытка отправить (max_parallel=1)
+        Strata--xAPI: Блокировка (HTTP 429)
+
+        Note over API, Redis: LiteLLM включает буферизацию
+        API->>Redis: Помещение запроса Dev в очередь (Enqueued)
+
+        %% Ожидание
+        Agent-->>Agent: Ожидание ответа...
+        Dev-->>Dev: Ожидание в редакторе...
+
+        Strata-->>API: Ответ для ROS 2 готов (45K токенов)
+        API-->>Agent: Выдача JSON ответа агенту
+
+        Note over API, Redis: Strata освободился
+        API->>Redis: Извлечение запроса Dev из очереди
+        API->>Strata: Отправка отложенного FIM запроса
+        Strata-->>API: Быстрый ответ
+        API-->>Dev: Запоздалый, но успешный ответ (Без Timeout)
+    end
