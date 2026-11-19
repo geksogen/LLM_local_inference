@@ -314,6 +314,9 @@ HTML_TEMPLATE = """
             <span class="status-label">Активных запросов</span>
             <span class="status-value" id="engine-queue" style="color: #60a5fa;">0</span>
         </div>
+        <div style="grid-column: 1 / -1; color: #94a3b8; font-size: 0.85em;">
+            🕘 Время работы сервиса: рабочие дни с 09:00 до 17:00. В остальное время сервис не работает.
+        </div>
     </div>
 
     <!-- Карточки -->
@@ -718,6 +721,8 @@ async def check_stats(api_key: str = Form(...)):
             else:
                 queue_status_html = '<span style="color: #10b981; font-weight: bold;">🟢 Движок свободен. Запросы выполняются мгновенно.</span>'
 
+            schedule_note = '<div style="color: #94a3b8; font-size: 0.85em; margin-top: 6px;">🕘 Время работы сервиса: рабочие дни с 09:00 до 17:00. В остальное время сервис не работает.</div>'
+
             progress_html = ""
             if budget and float(budget) > 0:
                 budget_val = float(budget)
@@ -756,6 +761,7 @@ async def check_stats(api_key: str = Form(...)):
                     <div style="margin-top: 1.2rem; padding: 0.75rem; background: var(--hint-bg); border-radius: 8px; border: 1px solid var(--border-color);">
                         <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase;">ВАШ СТАТУС:</div>
                         {queue_status_html}
+                        {schedule_note}
                     </div>
 
                     <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1rem;">Бюджет</h3>
